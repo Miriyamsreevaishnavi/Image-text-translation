@@ -1,0 +1,131 @@
+import numpy as np
+import pandas as pd
+import tensorflow as tf
+from tensorflow.keras.preprocessing.text import Tokenizer
+from tensorflow.keras.preprocessing.sequence import pad_sequences
+from sklearn.model_selection import train_test_split
+from tensorflow.keras.layers import Input, Embedding, MultiHeadAttention, Dense, LayerNormalization, Dropout
+from tensorflow.keras.models import Model
+from tensorflow.keras.losses import SparseCategoricalCrossentropy
+from tensorflow.keras.optimizers import Adam
+
+# Load the dataset
+df = pd.read_excel("Sminor_data.xlsx")
+
+# Drop rows with NaN values
+df.dropna(subset=['English', 'Hindi'], inplace=True)
+
+# Convert 'English' and 'Hindi' columns to lowercase
+df['English'] = df['English'].astype(str).str.lower()
+df['Hindi'] = df['Hindi'].astype(str).str.lower()
+
+# Tokenize English and Hindi sentences
+english_tokenizer = Tokenizer(oov_token='<OOV>')  # Set '<OOV>' token for out-of-vocabulary words
+english_tokenizer.fit_on_texts(df['English'])
+hindi_tokenizer = Tokenizer(oov_token='<OOV>')   # Set '<OOV>' token for out-of-vocabulary words
+hindi_tokenizer.fit_on_texts(df['Hindi'])
+
+# Convert sentences to sequences
+english_sequences = english_tokenizer.texts_to_sequences(df['English'])
+hindi_sequences = hindi_tokenizer.texts_to_sequences(df['Hindi'])
+
+# Pad sequences
+max_length = 100  # Set maximum sequence length
+english_padded = pad_sequences(english_sequences, maxlen=max_length, padding='post')
+hindi_padded = pad_sequences(hindi_sequences, maxlen=max_length, padding='post')
+
+# Split data into train and validation sets
+english_train, english_val, hindi_train, hindi_val = train_test_split(english_padded, hindi_padded, test_size=0.2)
+
+def transformer_model(max_length, vocab_size):
+    inputs = Input(shape=(max_length,))
+    embedding_layer = Embedding(input_dim=vocab_size, output_dim=256)(inputs)
+    embedding_layer = Dropout(0.1)(embedding_layer)
+    attention_output = MultiHeadAttention(num_heads=8, key_dim=256)(embedding_layer, embedding_layer)
+    attention_output = LayerNormalization(epsilon=1e-6)(attention_output + embedding_layer)
+    dense_layer = Dense(units=512, activation='relu')(attention_output)
+    dense_layer = Dropout(0.1)(dense_layer)
+    dense_layer = Dense(units=256)(dense_layer)
+    dense_layer = LayerNormalization(epsilon=1e-6)(dense_layer + attention_output)
+    output_layer = Dense(units=vocab_size, activation='softmax')(dense_layer)
+    model = Model(inputs=inputs, outputs=output_layer)
+    return model
+
+vocab_size_english = len(english_tokenizer.word_index) + 1
+vocab_size_hindi = len(hindi_tokenizer.word_index) + 1
+
+# Instantiate the Transformer model
+model = transformer_model(max_length, vocab_size_hindi)
+
+# Compile the model
+model.compile(optimizer=Adam(), loss=SparseCategoricalCrossentropy(), metrics=['accuracy'])
+
+# Print model summary
+model.summary()
+
+# Train the model with more epochs and larger batch size
+model.fit(english_train, hindi_train, validation_data=(english_val, hindi_val), epochs=20, batch_size=128)
+
+# Evaluate the model
+loss, accuracy = model.evaluate(english_val, hindi_val)
+print("Validation Loss:", loss)
+print("Validation Accuracy:", accuracy)
+import numpy as np
+import pandas as pd
+import tensorflow as tf
+from tensorflow.keras.preprocessing.text import Tokenizer
+from tensorflow.keras.preprocessing.sequence import pad_sequences
+from sklearn.model_selection import train_test_split
+from tensorflow.keras.layers import Input, Embedding, MultiHeadAttention, Dense, LayerNormalization, Dropout
+from tensorflow.keras.models import Model
+from tensorflow.keras.losses import SparseCategoricalCrossentropy
+from tensorflow.keras.optimizers import Adam
+
+# Load the dataset
+df = pd.read_excel("Sminor_data.xlsx")
+
+# Drop rows with NaN values
+df.dropna(subset=['English', 'Hindi'], inplace=True)
+
+# Convert 'English' and 'Hindi' columns to lowercase
+df['English'] = df['English'].astype(str).str.lower()
+df['Hindi'] = df['Hindi'].astype(str).str.lower()
+
+# Tokenize English and Hindi sentences
+english_tokenizer = Tokenizer(oov_token='<OOV>')  # Set '<OOV>' token for out-of-vocabulary words
+english_tokenizer.fit_on_texts(df['English'])
+hindi_tokenizer = Tokenizer(oov_token='<OOV>')   # Set '<OOV>' token for out-of-vocabulary words
+hindi_tokenizer.fit_on_texts(df['Hindi'])
+
+# Convert sentences to sequences
+english_sequences = english_tokenizer.texts_to_sequences(df['English'])
+hindi_sequences = hindi_tokenizer.texts_to_sequences(df['Hindi'])
+
+# Pad sequences
+max_length = 100  # Set maximum sequence length
+english_padded = pad_sequences(english_sequences, maxlen=max_length, padding='post')
+hindi_padded = pad_sequences(hindi_sequences, maxlen=max_length, padding='post')
+
+# Split data into train and validation sets
+english_train, english_val, hindi_train, hindi_val = train_test_split(english_padded, hindi_padded, test_size=0.2)
+
+def transformer_model(max_length, vocab_size):
+    inputs = Input(shape=(max_length,))
+    embedding_layer = Embedding(input_dim=vocab_size, output_dim=256)(inputs)
+    embedding_layer = Dropout(0.1)(embedding_layer)
+    attention_output = MultiHeadAttention(num_heads=8, key_dim=256)(embedding_layer, embedding_layer)
+    attention_output = LayerNormalization(epsilon=1e-6)(attention_output + embedding_layer)
+    dense_layer = Dense(units=512, activation='relu')(attention_output)
+    dense_layer = Dropout(0.1)(dense_layer)
+    dense_layer = Dense(units=256)(dense_layer)
+    dense_layer = LayerNormalization(epsilon=1e-6)(dense_layer + attention_output)
+    output_layer = Dense(units=vocab_size, activation='softmax')(dense_layer)
+    model = Model(inputs=inputs, outputs=output_layer)
+    return model
+
+
+
+
+
+
+
